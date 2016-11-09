@@ -11,6 +11,7 @@ date: 2016-10-17 15:32:24.000000000 +09:00
 -  	事件冒泡
 
 ## 概述
+
 当事件由一个元素触发，这个event会被分配到起对应的eventTarget上，然后任何监听该事件的listeners都会触发。
 
 事件冒泡机制，让这些**Event listeners**的触发顺序，从child一直传到最上面的父节点，最大的父节点是Document。
@@ -24,6 +25,7 @@ date: 2016-10-17 15:32:24.000000000 +09:00
 	<li>Three</li>
 </ul>
 ```
+
 上面的代码中，每一个`<li>`标签都可以响应click事件。
 
 ## what's the benefit?
@@ -52,12 +54,14 @@ document.getElementById("parent-list").addEventListener("click",function(e) {
 ## jQuery中的delegate函数
 
 使用方法
+
 ```javascript
 $("#link-list").delegate("a", "click", function(){
   // "$(this)" is the node that was clicked
   console.log("you clicked a link!",$(this));
 })
 ```
+
 jQuery的delegate的方法需要三个参数，一个选择器，一个Event名称，和事件处理函数。
 
 

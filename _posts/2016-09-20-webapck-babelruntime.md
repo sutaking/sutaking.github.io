@@ -11,6 +11,7 @@ date: 2016-09-20 15:32:24.000000000 +09:00
 后来突然想起来，可以用babel-runtime来做compile，做一劳永逸的方案。
 
 ### 首先配置下npm的依赖和webpack环境，安装下babel的相关组件。
+
 ```javascript
 npm install webpack --save-dev
 npm install babel-core --save-dev
@@ -19,6 +20,7 @@ npm install babel-polyfill --save-dev
 ```
 
 ### npm script中配置webpack
+
 ```javascript
 "scripts": {
     "build": "webpack --progress --color",
@@ -27,6 +29,7 @@ npm install babel-polyfill --save-dev
 ```
 
 ### 配置webpack.config.js,引入babel-loader，webpack的输出路径
+
 ```javascript
 var webpack = require('webpack');
 var path = require('path');
@@ -59,6 +62,7 @@ module.exports = {
 ```
 
 ### 最后在目标代码中加入polyfill
+
 ```javascript
 require("babel-polyfill");
 //如果是ES6的代码

@@ -87,7 +87,9 @@ export default connect(mapStateToProps, mapDispatchToProps)(MainPage);
 ```javascript
 this.props.receiveData
 ```
+
 ## With react-router
+
 结合router使用时需要有2步。
 
 #### 1st 绑定routing到reducer上

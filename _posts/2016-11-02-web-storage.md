@@ -42,11 +42,13 @@ sessionStorage 是个全局对象，它维护着在页面会话(page session)期
 ````
 
 ## localStorage(一直都在)
+
 localStorage 属性允许你访问一个 local Storage 对象。localStorage 与 sessionStorage 相似。不同之处在于，存储在 localStorage 里面的数据没有过期时间（expiration time），而存储在 sessionStorage 里面的数据会在浏览器会话（browsing session）结束时被清除，即浏览器关闭时。
 
 **当浏览器进入私人模式(private browsing mode，Google Chrome 上对应的应该是叫隐身模式)的时候，会创建一个新的、临时的、空的数据库，用以存储本地数据(local storage data)。当浏览器关闭时，里面的所有数据都将被丢弃。**
 
 #### 测试本地存储是否已被填充
+
 ````javascript
 if(!localStorage.getItem('bgcolor')) {
   populateStorage();
@@ -54,10 +56,13 @@ if(!localStorage.getItem('bgcolor')) {
   setStyles();
 }
 ````
+
 Storage.getItem() 方法用来从存储中获取一个数据项。该例中，我们测试 bgcolor 数据项是否存在。如果不存在，执行 populateStorage() 来将存在的自定义值添加到存储中。如果有值存在，则执行 setStyles() 来使用存储的值更新页面的样式。
 
 备注：你还可以使用 Storage.length 来测试存储对象是否为空。
+
 #### 从存储中获取值
+
 正如上面提到的，使用 Storage.getItem() 可以从存储中获取一个数据项。该方法接受数据项的键作为参数，并返回数据值。
 
 ````javascript
@@ -75,6 +80,7 @@ function setStyles() {
   imgElem.setAttribute('src', currentImage);
 }
 ````
+
 首先，前三行代码从本地中获取值。接着，将值显示到表单元素中，这样在重新加载页面时与自定义设置保持同步。最后，更新页面的样式和图片，这样重新加载页面后，你的自定义设置重新起作用了。
 
 #### 在存储中设置值
@@ -112,6 +118,7 @@ window.addEventListener('storage', function(e) {
   document.querySelector('.my-storage').textContent = e.storageArea;
 });
 ````
+
 这里，我们为 window 对象添加了一个事件监听器，在当前域名相关的 Storage 对象发生改变时该事件监听器会触发。正如你在上面看到的，此事件相关的事件对象有多个属性包含了有用的信息——改变的数据项的键，改变前的旧值，改变后的新值，改变的存储对象所在的文档的 URL，以及存储对象本身。
 
 #### 删除数据记录
@@ -124,7 +131,9 @@ Storage.removeItem()
 //不接受参数，只是简单地清空域名对应的整个存储对象。
 Storage.clear() 
 ````
+
 ## Cookie 和 localStorage 有啥差别
+
 #### Cookie
 Cookie 是小甜饼的意思。顾名思义，cookie 确实非常小，它的大小限制为4KB左右，是网景公司的前雇员 Lou Montulli 在1993年3月的发明。它的主要用途有保存登录信息，比如你登录某个网站市场可以看到“记住密码”，这通常就是通过在 Cookie 中存入一段辨别用户身份的数据来实现的。
 
