@@ -1,0 +1,192 @@
+#this
+
+##this在代码中有几种情况
+
+ 	|指向
+----|---------
+[全局的this](#全局的this)|window
+一般函数的this|还是指向this，但是在‘use strict’下为undefined
+作为对象方法的函数的this|指向该对象
+对象原型链上的this| 指向原型链上对象，也可以指向对象本身
+get/set方法与this| get/set方法所在的对象
+构造器中的this| 指向一个空的对象，但是该空对象的原型链上有构造器定义。
+call/apply方法与this| 不用赋值操作，就可以改变函数方法中的this对象到传入的对象上
+bind方法与this|
+---
+
+### <a name="全局的this">全局的this</a>
+```javascript
+console.log(this === window); //ture
+
+this.a = 37;
+console.log(window.a); //37
+```
+
+### 一般函数的this
+```javascript
+fucntion f1(){renturn this}
+f1() === window;// ture
+				//node.js -> global object
+
+
+fucntion f1(){
+	'use strict';
+	return this
+}
+f2() === undefined; //true
+
+
+```
+
+
+### 作为对象方法的函数的this
+```javascript
+var o = {
+	num: 33,
+	f:function() {
+		return this.num; //包含在对象中，这时指向对象o
+	}
+}
+console.log(o.f());// 33
+
+//还有一种情况可以指向对象o
+var o = {num:33};
+function f2(){
+	return this.num;//这时指向window
+}
+o.f = f2; //通过赋值的方式，将o的f对象指向f2，this也变为o
+//将函数方法作为对象方法后，就会发生改变。
+console.log(o.f()); //33
+
+```
+### 对象原型链上的this
+```javascript
+var o = {f: fucntion() {return this.a*this.b;}}
+var p = Object.create(o);
+p.a = 1, p.b=4;
+//原型链上找到f方法，指向对象p中的this。
+console.log(p.f()); //5
+
+```
+### get/set方法与this
+```javascript
+var o = {
+	re: 1,
+	im: -1,
+	get phase() {
+		return Math.atan2(this.im, this.re); //指向对象o
+	}
+}
+
+```
+### 构造器中的this
+```javascript
+function MyClass() {
+	this.a = 37;
+}
+var o = new MyClass();
+conosle.log(o.a); // this指向原型链上的对象MyClass
+
+//如果对象本身有只该属性
+function C2() {
+	this.a = 37;
+	return {a:38};
+}
+o = new C2();
+console.log(o.a); //38
+```
+
+###call/apply方法与this
+js中用来修改函数方法中的this，一般用到call和apply
+
+```javascript
+function add(c,d) {
+	return this.a+this.b+c+d;
+}
+var o = {a:1, b:3};
+//将add方法中的this对象，指向了对象o，这个过程中并没有赋值操作。
+add.call(o,5,7);//1+3+5+7 = 16
+
+```
+
+###bind方法与this
+bind()方法会创建一个新函数，当这个新函数被调用时，它的this值是传递给bind()的第一个参数, 它的参数是bind()的其他参数和其原本的参数.
+
+```
+fun.bind(thisArg[, arg1[, arg2[, ...]]])
+```
+
+***thisArg***
+
+当绑定函数被调用时，该参数会作为原函数运行时的 this 指向。当使用new 操作符调用绑定函数时，该参数无效。
+
+***arg1, arg2, ...***
+
+当绑定函数被调用时，这些参数加上绑定函数本身的参数会按照顺序作为原函数运行时的参数。
+
+***返回值***
+
+返回由指定的this值和初始化参数改造的原函数拷贝
+
+***用法1 创建绑定函数***
+
+bind() 最简单的用法是创建一个函数，使这个函数不论怎么调用都有同样的 this 值。JavaScript新手经常犯的一个错误是将一个方法从对象中拿出来，然后再调用，希望方法中的 this 是原来的对象。（比如在回调中传入这个方法。）如果不做特殊处理的话，一般会丢失原来的对象。从原来的函数和原来的对象创建一个绑定函数，则能很漂亮地解决这个问题：
+
+```javascript
+this.x = 9; 
+var module = {
+  x: 81,
+  getX: function() { return this.x; }
+};
+
+module.getX(); // 返回 81
+
+var retrieveX = module.getX;
+retrieveX(); // 返回 9, 在这种情况下，"this"指向全局作用域
+
+// 创建一个新函数，将"this"绑定到module对象
+// 新手可能会被全局的x变量和module里的属性x所迷惑
+var boundGetX = retrieveX.bind(module);
+boundGetX(); // 返回 81
+```
+
+***用法2 分离函数（Partial Functions）***
+
+bind()的另一个最简单的用法是使一个函数拥有***预设的初始参数***。这些参数（如果有的话）作为bind()的第二个参数跟在this（或其他对象）后面，之后它们会被插入到目标函数的参数列表的开始位置，传递给绑定函数的参数会跟在它们的后面。
+
+```javascript
+function list() {
+  return Array.prototype.slice.call(arguments);
+}
+
+var list1 = list(1, 2, 3); // [1, 2, 3]
+
+// Create a function with a preset leading argument
+var leadingThirtysevenList = list.bind(undefined, 37);
+
+var list2 = leadingThirtysevenList(); // [37]
+var list3 = leadingThirtysevenList(1, 2, 3); // [37, 1, 2, 3]
+```
+***用法3 配合 setTimeout***
+
+在默认情况下，使用 window.setTimeout() 时，this 关键字会指向 window （或全局）对象。当使用类的方法时，需要 this 引用类的实例，你可能需要显式地把 this 绑定到回调函数以便继续使用实例。
+
+```javascript
+function LateBloomer() {
+  this.petalCount = Math.ceil(Math.random() * 12) + 1;
+}
+
+// Declare bloom after a delay of 1 second
+LateBloomer.prototype.bloom = function() {
+  window.setTimeout(this.declare.bind(this), 1000);
+};
+
+LateBloomer.prototype.declare = function() {
+  console.log('I am a beautiful flower with ' +
+    this.petalCount + ' petals!');
+};
+
+var flower = new LateBloomer();
+flower.bloom();  // 一秒钟后, 调用'declare'方法
+```
+

@@ -1,5 +1,5 @@
 # Basic
-title: Sutaking's Blog
+title: sutaking's Blog
 subtitle: 爱折腾的南京码农
 #welcome_message: <a href="https://github.com/onevcat/vno-jekyll" target="_blank">Download the theme</a>
 description: 从后端做到前端，从C++做到JavaScript，技术栈不断在延伸，先定一个小目标：全栈开发工程师.
@@ -13,7 +13,7 @@ permalink: /:year/:month/:title/
 highlighter: plain
 
 # supported colors: blue, green, purple, red, orange or slate. If you need clear, leave it empty.
-cover_color: slate
+cover_color: blue
 
 # The blog button should not be removed.
 blog_button:
@@ -37,7 +37,7 @@ comment:
     
 # Social
 social:
-    weibo: 爱跑de疯之谷
+    weibo: 1249874933
     github: sutaking
     twitter: woaihekele
     #gplus: 107108267983477358170
