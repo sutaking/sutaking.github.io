@@ -1,9 +1,13 @@
-#react+redux+router异步数据获取教程
+---
+layout: post
+title: react+redux+router异步数据获取教程
+date: 2016-10-28 15:32:24.000000000 +09:00
+---
 
 react的FLUX数据流一直搞不清楚，他不像`Angular`的双向数据绑定，做一个`model`获取数据，然后通过`controller`来管理`view上`的数据显示就可以了。单项数据流引入了太多的概念，`state`、`action`、`reducer`、`dispatch`。就算看的懂图，也不一定能coding出来。
 
 不过我总算先搞定了`Redux`。
-![redux img](../../assets/redux.jpg)
+![redux img](../assets/images/redux.jpg)
 
 ## keywords
 -	**store**

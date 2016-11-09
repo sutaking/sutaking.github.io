@@ -1,4 +1,8 @@
-#webpack+babel-runtime编译代码后支持老版本浏览器
+---
+layout: post
+title: webpack+babel-runtime编译代码后支持老版本浏览器
+date: 2016-09-20 15:32:24.000000000 +09:00
+---
 
 同事弄来了一段代码，发现在chrome上跑的好好的，但是在别的一台也用webkit的浏览器上却无法完成初始化。看了一下，用了比较新的Promise和new Map()。
 
@@ -6,7 +10,7 @@
 
 后来突然想起来，可以用babel-runtime来做compile，做一劳永逸的方案。
 
-###首先配置下npm的依赖和webpack环境，安装下babel的相关组件。
+### 首先配置下npm的依赖和webpack环境，安装下babel的相关组件。
 ```javascript
 npm install webpack --save-dev
 npm install babel-core --save-dev
@@ -14,7 +18,7 @@ npm install babel-loader --save-dev
 npm install babel-polyfill --save-dev
 ```
 
-###npm script中配置webpack
+### npm script中配置webpack
 ```javascript
 "scripts": {
     "build": "webpack --progress --color",
@@ -22,7 +26,7 @@ npm install babel-polyfill --save-dev
 },
 ```
 
-###配置webpack.config.js,引入babel-loader，webpack的输出路径
+### 配置webpack.config.js,引入babel-loader，webpack的输出路径
 ```javascript
 var webpack = require('webpack');
 var path = require('path');
@@ -54,7 +58,7 @@ module.exports = {
 };
 ```
 
-###最后在目标代码中加入polyfill
+### 最后在目标代码中加入polyfill
 ```javascript
 require("babel-polyfill");
 //如果是ES6的代码

@@ -1,11 +1,14 @@
-#Explain event delegation
+---
+layout: post
+title: Explain event delegation
+date: 2016-10-17 15:32:24.000000000 +09:00
+---
 
-###keywords
+
+### keywords
 -	父节点与子节点
 - 	事件响应
 -  	事件冒泡
-
-
 
 ## 概述
 当事件由一个元素触发，这个event会被分配到起对应的eventTarget上，然后任何监听该事件的listeners都会触发。
@@ -23,7 +26,7 @@
 ```
 上面的代码中，每一个`<li>`标签都可以响应click事件。
 
-##what's the benefit?
+## what's the benefit?
 ### 减少事件绑定操作,代码逻辑简单了
 如果我们时把event事件绑定在ui中的`<li>`元素上，当子元素频发的进行添加和删除操作，我们需要每次都调用一个`addEventListener`方法来添加事件处理函数。
 
@@ -40,13 +43,13 @@ document.getElementById("parent-list").addEventListener("click",function(e) {
 });
 ```
 
-###内存减少
+### 内存减少
 使用事件代理会降低用于事件监听的总内存消耗，由于事件绑定的个数减少了。
 
 这方面，对于那些`long-lived applications`会比较明显。而且在事件绑定的操作中经常会忘记解绑，从而造成一些内存泄漏，事件代理在这种情况下，相对容易操作的多。
 
 
-##jQuery中的delegate函数
+## jQuery中的delegate函数
 
 使用方法
 ```javascript
