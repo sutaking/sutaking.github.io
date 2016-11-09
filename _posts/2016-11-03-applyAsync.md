@@ -4,7 +4,8 @@ title: $applyAsync() 到底是什么
 date: 2016-11-03 09:32:24.000000000 +09:00
 ---
 
-###概述
+## 概述
+
 [引用原文地址](http://blog.thoughtram.io/angularjs/2015/01/14/exploring-angular-1.3-speed-up-with-applyAsync.html)
 
 applyAsync是随着1.3发布的API，1.3的版本主要目的是在于提高angular的整体性能。可以说这是一个高性能的接口。
@@ -12,7 +13,7 @@ applyAsync是随着1.3发布的API，1.3的版本主要目的是在于提高angu
 文章主要介绍了，在处理多个$http请求的时，如果响应时间发生一致时，`$rootScope`会提供`$applyAsync()`来执行一次`$digest`来解决这个问题。
 
 
-##why & when 我们需要执行`$digest cysle`
+## why&when 我们需要执行`$digest cysle`
 
 angular为了实现双向绑定，做了一个`event loop`来自动管理和更新app的model和DOM，也就是`$digest`方法。
 
