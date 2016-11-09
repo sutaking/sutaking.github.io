@@ -7,7 +7,7 @@ date: 2016-10-28 15:32:24.000000000 +09:00
 react的FLUX数据流一直搞不清楚，他不像`Angular`的双向数据绑定，做一个`model`获取数据，然后通过`controller`来管理`view上`的数据显示就可以了。单项数据流引入了太多的概念，`state`、`action`、`reducer`、`dispatch`。就算看的懂图，也不一定能coding出来。
 
 不过我总算先搞定了`Redux`。
-![redux img](../assets/images/redux.jpg)
+![redux img](https://github.com/sutaking/sutaking.github.io/blob/master/assets/images/redux.jpg)
 
 ## keywords
 -	**store**
@@ -20,12 +20,12 @@ react的FLUX数据流一直搞不清楚，他不像`Angular`的双向数据绑�
 -  **thunk**
 
 ## Basic Usage
-####1st 实现action方法
+#### 1st 实现action方法
 ```javascript
 export const addDeck = name => ({ type: 'ADD_DECK', data: name });
 ```
 
-####2nd 根据action方法创建reducer方法
+#### 2nd 根据action方法创建reducer方法
 ```javascript
 export const showBack = (state, action) => {
   switch(action.type) {
@@ -36,7 +36,7 @@ export const showBack = (state, action) => {
   }
 };
 ```
-####3rd 根据reducer方法创建store
+#### 3rd 根据reducer方法创建store
 ```javascript
 const store = createStore(combineReducers(reducers));
 ```
@@ -54,13 +54,13 @@ let unsubscribe = store.subscribe(() =>
 unsubscribe();
 ```
 
-####4th 引入react-redux的<Provider>，导入store
+#### 4th 引入react-redux的<Provider>，导入store
 ```javascript
 <Provider store={store}>
 	{...}
 </Provider>
 ```
-####5th react组件中通过connect方法绑定store和dispatch。
+#### 5th react组件中通过connect方法绑定store和dispatch。
 ```javascript
 const mapStateToProps = (newTalks) => ({
     newTalks
@@ -73,14 +73,14 @@ const mapDispatchToProps = dispatch => ({
 
 export default connect(mapStateToProps, mapDispatchToProps)(MainPage);
 ```
-####6th this.props中直接调用action方法。
+#### 6th this.props中直接调用action方法。
 ```javascript
 this.props.receiveData
 ```
 ## With react-router
 结合router使用时需要有2步。
 
-####1st 绑定routing到reducer上
+#### 1st 绑定routing到reducer上
 ```javascript
 import { syncHistoryWithStore, routerReducer } from 'react-router-redux';
 import * as reducers from './redux/reducer';
@@ -88,7 +88,7 @@ reducers.routing = routerReducer;
 
 const store = createStore(combineReducers(reducers));
 ```
-####2nd 使用syncHistoryWithStore绑定store和browserHistory
+#### 2nd 使用syncHistoryWithStore绑定store和browserHistory
 ```javascript
 const history = syncHistoryWithStore(browserHistory, store);
 
@@ -110,7 +110,7 @@ const history = syncHistoryWithStore(browserHistory, store);
 
 实现action异步操作，必须要引入middleware。我这里用了`applyMiddleware(thunkMiddleware)`组件，也可以用其他的。
 
-####1st 创建store是引入Middleware
+#### 1st 创建store是引入Middleware
 
 ```javascript
 import thunkMiddleware from 'redux-thunk';
@@ -132,7 +132,7 @@ export const fetchData = () => {
   };
 };
 ```
-####3rd 组件中对异步的store元素有相应的判断操作。
+#### 3rd 组件中对异步的store元素有相应的判断操作。
 React组件会在store值发生变化时自动调用render()方法，更新异步数据。但是我们同样也需要处理异步数据没有返回或者请求失败的情况。否则渲染会失败，页面卡住。
 
 ```javascript
@@ -182,7 +182,7 @@ const createStore = (reducer) => {
 };
 ```
 
-####combineReducer的简单实现
+#### combineReducer的简单实现
 ```javascript
 const combineReducers = reducers => {
   return (state = {}, action) => {
