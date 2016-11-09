@@ -35,7 +35,8 @@ angular为了实现双向绑定，做了一个`event loop`来自动管理和更�
 当我们发起一个`$apply`时会执行一次loop-event，也就是说，当发起多次http请求，哪怕是同时响应回调，angular仍然会执行多次loop-event。这样会影响到我们app的性能。如果能让同时发生的数据请求操作，减少执行loop-event的次数，很显然可以提高app的速度。
 
 `$applyAsync()`就是做这件事的。他可以很好的控制多次请求后的`$apply`操作发生在一次更新中。
--	他把这次请求的promise放在一个queue里
+
+- 他把这次请求的promise放在一个queue里
 - 通过让浏览器请求数据的时候执行setTimeout()，他不执行结束不安排下一次计时器。
 - 当timeout执行，queue中的所有请求都完成后，执行一次`$apply`就可以了
 - 如果浏览器的请求间隔不高10毫秒，setTimeout会默认为0延迟，这样，多次请求返回在同一时间，等于执行一次就可以了。
