@@ -98,7 +98,9 @@ const history = syncHistoryWithStore(browserHistory, store);
            </Router>
         </Provider>
 ```
+
 ## Async
+
 类似 Express 或 Koa 框架中的中间件。它提供的是位于 action 被发起之后，到达 reducer 之前的扩展。
 中间件的设计使用了非常多的函数式编程的思想，包括：高阶函数，复合函数，柯里化和ES6语法，源码仅仅20行左右。
 项目中主要使用了三个中间件，分别解决不同的问题。
