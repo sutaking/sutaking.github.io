@@ -14,13 +14,13 @@ date: 2016-11-09 19:52:24.000000000 +09:00
 
 1. Construct HTML using template strings.
 2. Eliminate if/else blocks with hash maps.
-- Collapse multiple arguments with a config object.
-- Pre-bind arguments to make point-free functions.
-- Break complex conditionals with intention revealing .variables.
-- Inline IIFE for complex initialization.
-- Use hoisting/composed-method to focus on important code.
+3. Collapse multiple arguments with a config object.
+4. Pre-bind arguments to make point-free functions.
+5. Break complex conditionals with intention revealing .variables.
+6. Inline IIFE for complex initialization.
+7. Use hoisting/composed-method to focus on important code.
 
-### 使用ES6的template string来替换不好用的html文本
+### 1.使用ES6的template string来替换不好用的html文本
 	
 ```javascript
 var html = '<div class="my-car-class-contain">' +
@@ -36,7 +36,7 @@ let tmp_html = `<div class="my-car-class-contain">
 
 ```
 
-### 用hash-map来替换复杂的if/else判断条件
+### 2.用hash-map来替换复杂的if/else判断条件
 
 ```javascript
 function getSomething(type) {
@@ -68,7 +68,7 @@ import typeMap from './conditions';
 
 ```
 
-### 减少函数入参，用Object来代替。
+### 3.减少函数入参，用Object来代替。
 
 ```javascript
 function formatNumber(value, decimals, asPercent, prefix, suffix) {
@@ -86,7 +86,7 @@ var num = 20;
 formatNumber({value: num, suffix:'%'});
 ```
 
-### 使用bind方法，将一个函数分离成多个更好理解的函数
+### 4.使用bind方法，将一个函数分离成多个更好理解的函数
 
 ```javascript
 function doOperation(name='default', args=[]) {
@@ -114,7 +114,7 @@ findSome().then(play);
 getCarList().then(buy);
 ```
 
-### 使用array的some方法来重构条件判断语句
+### 5.使用array的some方法来重构条件判断语句
 
 ```javascript
 import _ from 'lodash';
@@ -163,7 +163,7 @@ if(matches) {
 }
 ```
 
-### 使用IIFE(Immediately-Invoked Function Expression)做复杂初始化
+### 6.使用IIFE(Immediately-Invoked Function Expression)做复杂初始化
 
 ```javascript
 var settings = readSettings();
@@ -190,7 +190,7 @@ var defaultConfig = (() => {
 })();
 ```
 
-### 把回调的逻辑抽取成函数，隐藏逻辑，让代码语义更清晰。
+### 7.把回调的逻辑抽取成函数，隐藏逻辑，让代码语义更清晰。
  
 ```javascript
 _fetchData(url)
