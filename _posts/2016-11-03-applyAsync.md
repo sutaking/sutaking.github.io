@@ -6,7 +6,7 @@ date: 2016-11-03 09:32:24.000000000 +09:00
 
 ## 概述
 
-[引用原文地址](http://blog.thoughtram.io/angularjs/2015/01/14/exploring-angular-1.3-speed-up-with-applyAsync.html)
+[访问原文地址](http://njfeng.com/2016/11/applyAsync/)
 
 applyAsync是随着1.3发布的API，1.3的版本主要目的是在于提高angular的整体性能。可以说这是一个高性能的接口。
 
@@ -41,7 +41,8 @@ angular为了实现双向绑定，做了一个`event loop`来自动管理和更�
 - 当timeout执行，queue中的所有请求都完成后，执行一次`$apply`就可以了
 - 如果浏览器的请求间隔不高10毫秒，setTimeout会默认为0延迟，这样，多次请求返回在同一时间，等于执行一次就可以了。
 
-
+### 引用
+[http://blog.thoughtram.io/angularjs/2015/01/14/exploring-angular-1.3-speed-up-with-applyAsync.html](http://blog.thoughtram.io/angularjs/2015/01/14/exploring-angular-1.3-speed-up-with-applyAsync.html)
 
 
 
