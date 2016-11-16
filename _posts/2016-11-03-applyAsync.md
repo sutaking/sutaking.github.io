@@ -4,9 +4,9 @@ title: $applyAsync() 到底是什么
 date: 2016-11-03 09:32:24.000000000 +09:00
 ---
 
-## 概述
-
 [访问原文地址](http://njfeng.com/2016/11/applyAsync/)
+
+## 概述
 
 applyAsync是随着1.3发布的API，1.3的版本主要目的是在于提高angular的整体性能。可以说这是一个高性能的接口。
 
