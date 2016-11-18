@@ -4,7 +4,7 @@ title: ES6中的异步编程：Generators函数（一）
 date: 2016-11-16 16:00:24.000000000 +08:00
 ---
 
-[访问原文地址]()
+[访问原文地址](http://njfeng.com/2016/11/es6-generation/)
 
 对ES6的generators的介绍分为3个部分
 
@@ -14,7 +14,7 @@ date: 2016-11-16 16:00:24.000000000 +08:00
 
 ## 概述
 
-Generators函数为ES6中提供的异步编程方法，十分的奇葩，光看语法，简直认不出这也是JavaScript了。现在比较流行使用generators来把一些异步编程的方法，写的像同步数据流方法一样。因为从语法角度来看，generators函数是一个状态机，封装了多个内部状态，通过iterator来分步调用。
+Generator函数是协程在ES6的实现，用来做异步流程的封装，最大特点就是可以交出函数的执行权（即暂停执行）。十分的奇葩，光看语法，简直认不出这也是JavaScript了。由于可以使用yield语句来暂停异步操作，这让generators异步编程的代码，很像同步数据流方法一样。因为从语法角度来看，generators函数是一个状态机，封装了多个内部状态，通过iterator来分步调用。
 
 ## 基本语法
 
@@ -258,31 +258,34 @@ getArticleList()
 
 function getAuthor(id){
     return new Promise(function(resolve, reject){
-        $.ajax(url,{
-            author: id
-        }).done(function(result){
-            resolve(result);
+        $.ajax({
+            url: id+'author.json',
+            success: function(data) {
+              resolve(data);
+          }
         })
     });
 }
 
 function getArticle(id){
     return new Promise(function(resolve, reject){
-        $.ajax(url,{
-            id: id
-        }).done(function(result){
-            resolve(result);
+        $.ajax({
+            url: id+'.json',
+            success: function(data) {
+              resolve(data);
+          }
         })
     });
 }
 
 function getArticleList(){
     return new Promise(function(resolve, reject){
-       $.ajax(
-        url)
-        .done(function(result){
-            resolve(result);
-        }); 
+       $.ajax({
+           url: 'all.json',
+           success: function(data) {
+             resolve(data);
+         }
+       }) 
     });
 }
 ```
@@ -308,56 +311,9 @@ gen.next().value.then(function(r1){
 });
 ```
 
-### Promise + Generator
 
-```javascript
-function* run(){
-  var articles = yield getArticleList();
-  var article = yield getArticle(articles[0].id);
-  var author = yield getAuthor(article.authorId);
-  alert(author.email);  
-}
 
-var gen = run();
-gen.next().value.then(function(r1){
-  gen.next(r1).value.then(function(r2){
-      gen.next(r2).value.then(function(r3){
-        gen.next(r3);
-        console.log("done");
-      })
-  })
-});
 
-//可以用一个go函数把next包起来，处理更多的case，避免callback回调
-function runGenerator(){
-    var gen = run();
-    
-    function go(result){
-        if(result.done) return;
-        result.value.then(function(r){
-            go(gen.next(r));
-        });
-    }
-    
-    go(gen.next());
-}
-
-runGenerator();
-```
-
-## 基于generators实现Async函数
-
-...
-
-## Observable Async Flow Control
-
-...
-
-## 引用
--	[Asynchronous calls with ES6 generators](http://blog.mgechev.com/2014/12/21/handling-asynchronous-calls-with-es6-javascript-generators/)
-- 	[[Javascript] Promise, generator, async與ES6](http://huli.logdown.com/posts/292655-javascript-promise-generator-async-es6)
--  [Using ES6 Generators And Yield To Implement Asynchronous Workflows In JavaScript](https://www.bennadel.com/blog/3123-using-es6-generators-and-yield-to-implement-asynchronous-workflows-in-javascript.htm)
--  [7 Surprising Things I Learned Writing a Fibonacci Generator in JavaScript](https://medium.com/javascript-scene/7-surprising-things-i-learned-writing-a-fibonacci-generator-4886a5c87710#.8nwarj6yu)
--  [The Hidden Power of ES6 Generators: Observable Async Flow Control](https://medium.com/javascript-scene/the-hidden-power-of-es6-generators-observable-async-flow-control-cfa4c7f31435#.4cadgop5s)
-- [Going Async With ES6 Generators](https://davidwalsh.name/async-generators)
+## 参考
+- 	[\[Javascript\] Promise, generator, async與ES6](http://huli.logdown.com/posts/292655-javascript-promise-generator-async-es6)
 - [Generator 函数](http://es6.ruanyifeng.com/#docs/generator)
