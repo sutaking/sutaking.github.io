@@ -81,106 +81,152 @@ request(..)函数对makeAjaxCall(..)做了基本封装，让数据请求的回�
 
 这是因为当it.next(..)在Ajax的callback中调用的是偶，它传递Ajax的返回结果。这说明这个返回值发送到我们的generators时，已经中间那句`result1 = yield .. `给暂停下来了。
 
-That's really cool and super powerful. In essence, result1 = yield request(..) is asking for the value, but it's (almost!) completely hidden from us -- at least us not needing to worry about it here -- that the implementation under the covers causes this step to be asynchronous. It accomplishes that asynchronicity by hiding the pause capability in yield, and separating out the resume capability of the generator to another function, so that our main code is just making a synchronous(-looking) value request.
 
-The exact same goes for the second result2 = yield result(..) statement: it transparently pauses & resumes, and gives us the value we asked for, all without bothering us about any details of asynchronicity at that point in our coding.
+这个真的很酷很强大。实质上看，`result1 = yield request(..)`这句是请求数据，但是它完全把异步逻辑在我们面前藏起来了，至少不需要我们在这里考虑这部分异步逻辑，它通过yield的暂停能力隐藏了异步逻辑，同时把generator恢复逻辑的功能分离到下一个yield函数中。这就让我们的主要逻辑看上去很像一个同步请求方法。
 
-Of course, yield is present, so there is a subtle hint that something magical (aka async) may occur at that point. But yield is a pretty minor syntactic signal/overhead compared to the hellish nightmares of nested callbacks (or even the API overhead of promise chains!).
 
-Notice also that I said "may occur". That's a pretty powerful thing in and of itself. The program above always makes an async Ajax call, but what if it didn't? What if we later changed our program to have an in-memory cache of previous (or prefetched) Ajax responses? Or some other complexity in our application's URL router could in some cases fulfill an Ajax request right away, without needing to actually go fetch it from a server?
+第二句表达式`result2 = yield result(..)`也基本一样的作用，它将pauses与resumes传进去，输出一个我们请求的值，也根本不需要对异步操作担心。
+
+
+当然，因为yield的存在，这里会有一个微妙的提示，在这个点上会发生一些神奇的事情（也称异步）。但是跟噩梦般的嵌套回调地狱（或者是promise链的API开销）相比，yield语句只是需要一个很小的语法开销/提示。
+
+
+
+
+上面的代码总是启动一个异步Ajax请求，但是如果没有做会发生什么？如果我们后来更改了我们程序中先前（预先请求）的Ajax返回的数据，该怎么办？或者我们的程序的URL路由系统通过其他一些复杂的逻辑，可以立即满足Ajax请求，这时就可以不需要fetch数据从服务器了。
+
 
 We could change the implementation of request(..) to something like this:
+这样，我们可以把`request(..)`代码稍微修改一下
 
+```javascript
 var cache = {};
 
 function request(url) {
-    if (cache[url]) {
-        // "defer" cached response long enough for current
-        // execution thread to complete
-        setTimeout( function(){
-            it.next( cache[url] );
-        }, 0 );
-    }
-    else {
-        makeAjaxCall( url, function(resp){
-            cache[url] = resp;
-            it.next( resp );
-        } );
-    }
+	if(cache[url]) {
+		// defer cache里面的数据对现在来说是已经足够了
+		// 执行下面
+		setTimeout(function() {
+			it.next(cache[url])
+		}, 0);
+	}
+	else {
+		makeAjaxCall(url, function(resp) {
+			cache[url] = resp;
+			it.next(resp);
+		})
+	}
 }
-Note: A subtle, tricky detail here is the need for the setTimeout(..0) deferral in the case where the cache has the result already. If we had just called it.next(..) right away, it would have created an error, because (and this is the tricky part) the generator is not technically in a paused state yet. Our function call request(..) is being fully evaluated first, and then the yield pauses. So, we can't call it.next(..) again yet immediately inside request(..), because at that exact moment the generator is still running (yield hasn't been processed). But we can call it.next(..) "later", immediately after the current thread of execution is complete, which our setTimeout(..0) "hack" accomplishes. We'll have a much nicer answer for this down below.
+```
 
-Now, our main generator code still looks like:
 
-var result1 = yield request( "http://some.url.1" );
-var data = JSON.parse( result1 );
-..
-See!? Our generator logic (aka our flow control) didn't have to change at all from the non-cache-enabled version above.
+注意：一句很奇妙、神奇的`setTimeout(..0)`放在了当缓存中已经请求过数据的处理逻辑中。如果我们立即调用`it.next(...)`，这样会发生一个error，这是因为generator还没有完成paused操作。我们的函数首先要完全调用`request(..)`,这时才会启动yield的暂停。因此，我们不能立即在`request(..)`中立即调用`it.next(...)`，这是因为这时generator仍然在运行(yield并没有执行)。但是我们可以稍后一点调用`it.next(...)`，等待现在的线程执行完毕，这就是`setTimeout(..0)`这句有魔性的代码放在这里的意义。我们稍后还会有一个更好的解决办法。
 
-The code in *main() still just asks for a value, and pauses until it gets it back before moving on. In our current scenario, that "pause" could be relatively long (making an actual server request, to perhaps 300-800ms) or it could be almost immediate (the setTimeout(..0) deferral hack). But our flow control doesn't care.
 
-That's the real power of abstracting away asynchronicity as an implementation detail.
 
-Better Async
-The above approach is quite fine for simple async generators work. But it will quickly become limiting, so we'll need a more powerful async mechanism to pair with our generators, that's capable of handling a lot more of the heavy lifting. That mechanism? Promises.
+现在，我们的generator代码并不需要发生任何变化：
 
-If you're still a little fuzzy on ES6 Promises, I wrote an extensive 5-part blog post series all about them. Go take a read. I'll wait for you to come back. <chuckle, chuckle>. Subtle, corny async jokes ftw!
+```javascript
+var restult1 = yield request('http://some.url.1');
+var data = JSON.parse(result1);
+...
+```
 
-The earlier Ajax code examples here suffer from all the same Inversion of Control issues (aka "callback hell") as our initial nested-callback example. Some observations of where things are lacking for us so far:
 
-There's no clear path for error handling. As we learned in the previous post, we could have detected an error with the Ajax call (somehow), passed it back to our generator with it.throw(..), and then used try..catch in our generator logic to handle it. But that's just more manual work to wire up in the "back-end" (the code handling our generator iterator), and it may not be code we can re-use if we're doing lots of generators in our program.
-If the makeAjaxCall(..) utility isn't under our control, and it happens to call the callback multiple times, or signal both success and error simultaneously, etc, then our generator will go haywire (uncaught errors, unexpected values, etc). Handling and preventing such issues is lots of repetitive manual work, also possibly not portable.
-Often times we need to do more than one task "in parallel" (like two simultaneous Ajax calls, for instance). Since generator yield statements are each a single pause point, two or more cannot run at the same time -- they have to run one-at-a-time, in order. So, it's not very clear how to fire off multiple tasks at a single generator yield point, without wiring up lots of manual code under the covers.
-As you can see, all of these problems are solvable, but who really wants to reinvent these solutions every time. We need a more powerful pattern that's designed specifically as a trustable, reusable solution for our generator-based async coding.
 
-That pattern? yielding out promises, and letting them resume the generator when they fulfill.
+看到没？我们的generator逻辑（也就是我们的流程逻辑）即使增加了缓存处理功能后，仍不需要发生任何改变。
 
-Recall above that we did yield request(..), and that the request(..) utility didn't have any return value, so it was effectively just yield undefined?
 
-Let's adjust that a little bit. Let's change our request(..) utility to be promises-based, so that it returns a promise, and thus what we yield out is actually a promise (and not undefined).
 
+
+`*main()`中的代码还是只需要请求数据后暂停，之后等到数据返回后顺序执行下去。在我们当前的情况下，‘暂停’可能相对要长一些（做一个服务器的请求，大约要300~800ms），或者他可以几乎立即返回（走setTimeout的逻辑），但是我们的流程逻辑完全不需要关心这些。
+
+
+这就是将异步编程抽象成更小细节的真正力量。
+
+
+更好的异步编程
+
+
+上面的方法可以适用于那些比较简单的异步generator工作流程。但是它将很快收到限制，因此我们需要一些更强大的异步机制与我们的generator来合作，这样才可以发挥出更强大的功能。那是什么机制：Promise。
+
+
+
+早先的Ajax实例总是会收到嵌套回调的困扰，问题如下：
+
+
+
+-	1.没有明确的方法来处理请求error。我们都知道，Ajax请求有时是会失败的，这时我们需要使用generator中的`it.throw(...)`,同时还需要使用`try...catch`来处理请求错误时的逻辑。但是这更多是一些在后台（我们那些在iterator中的代码）手动的工作。我需要一些可以服用的方法，放在我们自己代码的generator中。
+
+
+
+-	2.假如`makeAjaxCall(..)`这段代码不在我们的控制下了，或者他需要多次调用回调，又或者它同时返回success与error，等等。这时我们的generator的会变得乱七八糟（返回error实现，出现异常值，等等）。控制以及防止发生这类问题是需要花费大量的手工时间的，而且一点也不能即插即用。
+
+
+
+-	3.通常我需要执行并行执行任务（比如同时做2个Ajax请求）。由于generator yield机制都是逐步暂停，无法在同时运行另一个或多个任务，他的任务必须一个一个的按顺序执行。因此，这不是太容易在一个generator中去操作多任务，我们只能默默的在背后手撸大量的代码。
+
+
+就像你看到的，所有的问题都被解决了。但是没人愿意每次都去反复的去实现一遍这些方法。我们需要一种更强大的模式，专门设计出一个可信赖的，可重用的基于generator异步编程的解决方法。
+
+
+什么模式？把promise与yield结合，使得可以在执行完成后恢复generator的流程。
+
+
+让我们稍微用promise修改下`request(..)`，让yield返回一个promise。
+
+```javascript
 function request(url) {
-    // Note: returning a promise now!
-    return new Promise( function(resolve,reject){
-        makeAjaxCall( url, resolve );
-    } );
+	//现在返回一个promise了
+	return new Promise( function(resolve, reject) {
+		makeAjaxCall(url, resolve);
+	});
 }
+```
+
 request(..) now constructs a promise that will be resolved when the Ajax call finishes, and we return that promise, so that it can be yielded out. What next?
+`request(..)`现在由一个promise构成，当Ajax请求完成后会返回这个promise，但是然后呢？
+
 
 We'll need a utility that controls our generator's iterator, that will receive those yielded promises and wire them up to resume the generator (via next(..)). I'll call this utility runGenerator(..) for now:
+我们需要控制generator的iterator，它将接受到yield返回的那个promise，同时通过next(...)恢复generator运行，并把他们传递下去，我增加了一个`runGenerator(...)`方法来做这件事。
 
-// run (async) a generator to completion
-// Note: simplified approach: no error handling here
-function runGenerator(g) {
-    var it = g(), ret;
-
-    // asynchronously iterate over generator
-    (function iterate(val){
-        ret = it.next( val );
-
-        if (!ret.done) {
-            // poor man's "is it a promise?" test
-            if ("then" in ret.value) {
-                // wait on the promise
-                ret.value.then( iterate );
-            }
-            // immediate value: just send right back in
-            else {
-                // avoid synchronous recursion
-                setTimeout( function(){
-                    iterate( ret.value );
-                }, 0 );
-            }
-        }
-    })();
+```javascript
+//比较简单，没有error事件处理
+funtion runGenerator(g) {
+	var it = g(), retl
+	
+	//异步iterator遍历generator
+	(function iterate(val) {
+		//返回一个promise
+		ret = it.next(val);
+		
+		if(!ret.done) {
+			if('then' in ret.value) {
+				//等待接收promise
+				ret.value.then(iterate);
+			}
+			//获取立即就有的数据，不是promise了
+			else {
+				//避免同步操作
+				setTimeout(function() {
+					iterate(ret.value);
+				}, 0);
+			}
+		}
+	})();
 }
-Key things to notice:
+```
 
-We automatically initialize the generator (creating its it iterator), and we asynchronously will run it to completion (done:true).
-We look for a promise to be yielded out (aka the return value from each it.next(..) call). If so, we wait for it to complete by registering then(..) on the promise.
-If any immediate (aka non-promise) value is returned out, we simply send that value back into the generator so it keeps going immediately.
-Now, how do we use it?
+关键点:
 
+
+-	自动初始化generator（直接创建它的iterator），并且异步递将他一直运行到结束（当`done:true`就不在执行）
+
+-	如果Promise被返回出来，这时我们就等待到执行`then(...)`方法的时候再处理。
+- 如果是可以立即返回的数据，我们直接把数据返回给generator让他直接去执行下一步。
+
+```javascript
 runGenerator( function *main(){
     var result1 = yield request( "http://some.url.1" );
     var data = JSON.parse( result1 );
@@ -189,198 +235,137 @@ runGenerator( function *main(){
     var resp = JSON.parse( result2 );
     console.log( "The value you asked for: " + resp.value );
 } );
-Bam! Wait... that's the exact same generator code as earlier? Yep. Again, this is the power of generators being shown off. The fact that we're now creating promises, yielding them out, and resuming the generator on their completion -- ALL OF THAT IS "HIDDEN" IMPLEMENTATION DETAIL! It's not really hidden, it's just separated from the consumption code (our flow control in our generator).
+```
 
-By waiting on the yielded out promise, and then sending its completion value back into it.next(..), the result1 = yield request(..) gets the value exactly as it did before.
 
-But now that we're using promises for managing the async part of the generator's code, we solve all the inversion/trust issues from callback-only coding approaches. We get all these solutions to our above issues for "free" by using generators + promises:
+等一下，现在的generator跟原先的完全一样嘛。尽管我们改用了promise，但是yield方法不需要有什么变化，因为我们把那些逻辑都从我们的流程管理中分离出去了。
 
-We now have built-in error handling which is easy to wire up. We didn't show it above in our runGenerator(..), but it's not hard at all to listen for errors from a promise, and wire them to it.throw(..) -- then we can use try..catch in our generator code to catch and handle errors.
-We get all the control/trustability that promises offer. No worries, no fuss.
-Promises have lots of powerful abstractions on top of them that automatically handle the complexities of multiple "parallel" tasks, etc.
+尽管现在的yield是返回一个promise了，并把这个promise传递给下一个`it.next(..)`,但是`result1 = yield request(..)`这句得到的值跟以前还是一样的。
 
-For example, yield Promise.all([ .. ]) would take an array of promises for "parallel" tasks, and yield out a single promise (for the generator to handle), which waits on all of the sub-promises to complete (in whichever order) before proceeding. What you'd get back from the yield expression (when the promise finishes) is an array of all the sub-promise responses, in order of how they were requested (so it's predictable regardless of completion order).
 
-First, let's explore error handling:
 
-// assume: `makeAjaxCall(..)` now expects an "error-first style" callback (omitted for brevity)
-// assume: `runGenerator(..)` now also handles error handling (omitted for brevity)
+我们现在开始用promise来管理generator中的异步代码，这样我们就解决掉所有使用回调函数方法中会出现的反转/信任问题。由于我们用了generator+promise的方法，我们不需要增加任何逻辑就解决掉了以上所有问题
 
+
+
+-	我们可以很容易的增加一个error异常处理。虽然不在`runGenerator(...)`中，但是很容易从一个promise中监听error，并它他们的逻辑写在`it.throw(..)`里面，这时我们就可以用上`try..catch``方法在我们的generator代码中去获取和管理erros了。
+- 我们得到到所有的 control/trustability，完全不需要增加代码。
+-	promise有着很强的抽象性，让我们可以实现一些多任务的并行操作。
+
+	比如：`Promise.all([ .. ])`就可以并行执行一个promise数组，yield虽然只能拿到一个promise，但是这个是所有子promise执行完毕之后的集合数组。
+
+先让我们看下error处理的代码：
+
+```javascript
 function request(url) {
-    return new Promise( function(resolve,reject){
-        // pass an error-first style callback
-        makeAjaxCall( url, function(err,text){
-            if (err) reject( err );
-            else resolve( text );
-        } );
-    } );
+	return new Promise( function(resolve, reject) {
+		//第一个参数是error
+		makeAjaxCall(url, function(err, text) {
+			if(err) reject(err);
+			else resolve(text);
+		});
+	});
 }
 
-runGenerator( function *main(){
-    try {
-        var result1 = yield request( "http://some.url.1" );
-    }
-    catch (err) {
-        console.log( "Error: " + err );
-        return;
-    }
-    var data = JSON.parse( result1 );
+runGenerator(function *main() {
+	try {
+		var result1 = yield request('http://some.url.1');
+	}
+	catch(err) {
+		console.log('Error:' + err);
+		retrun;
+	}
+	var data = JSON.parse(result1);
+	
+	try{
+		var result2 = yield request('http://some.url.2?id='+data.id);
+	}
+	catch(err) {
+		console.log('Error:' + err);
+		retrun;
+	}
+	var resp = JSON.parse(result2);
+	console.log("The value you asked for: " + resp.value);
+});
 
-    try {
-        var result2 = yield request( "http://some.url.2?id=" + data.id );
-    } catch (err) {
-        console.log( "Error: " + err );
-        return;
-    }
-    var resp = JSON.parse( result2 );
-    console.log( "The value you asked for: " + resp.value );
-} );
-If a promise rejection (or any other kind of error/exception) happens while the URL fetching is happening, the promise rejection will be mapped to a generator error (using the -- not shown -- it.throw(..) in runGenerator(..)), which will be caught by the try..catch statements.
+```
 
-Now, let's see a more complex example that uses promises for managing even more async complexity:
 
+如果执行url的fetch时promise被reject（请求失败，或者异常）了，promise会给generator抛出一个异常，通过`try..catch`语句可以获取到了。
+
+
+现在，我们让promise来处理更复杂的异步操作：
+
+```javascript
 function request(url) {
-    return new Promise( function(resolve,reject){
-        makeAjaxCall( url, resolve );
-    } )
-    // do some post-processing on the returned text
-    .then( function(text){
-        // did we just get a (redirect) URL back?
-        if (/^https?:\/\/.+/.test( text )) {
-            // make another sub-request to the new URL
-            return request( text );
-        }
-        // otherwise, assume text is what we expected to get back
-        else {
-            return text;
-        }
-    } );
+	return new Promise( function(resolve, reject) {
+		makeAjax(url, resolve);
+	})
+	//获取到返回的text值后，做一些处理。
+	.then( function(text) {
+		
+			//如果我们拿到的是一个url就把text提前出来在返回
+			if(/^http?:\/\/.+/.text(text)) {
+				return request(text)；			}
+			//如果我们就是要一个text，直接返回
+			else {
+				return text;
+			}
+	});
 }
 
-runGenerator( function *main(){
-    var search_terms = yield Promise.all( [
-        request( "http://some.url.1" ),
-        request( "http://some.url.2" ),
-        request( "http://some.url.3" )
-    ] );
+runGenerator (function *main() {
+	var search_terms = yield Promise.all([
+		request( "http://some.url.1" ),
+     request( "http://some.url.2" ),
+     request( "http://some.url.3" )
+	]);
 
-    var search_results = yield request(
-        "http://some.url.4?search=" + search_terms.join( "+" )
-    );
-    var resp = JSON.parse( search_results );
+	var search_results = yield request(
+		'http://some.url.4?search='+search_terms.join('+')
+	);
+	var resp = JSON.parse(search_results);
+	
+	console.log('Search results:'+resp.value);
+});
 
-    console.log( "Search results: " + resp.value );
-} );
-Promise.all([ .. ]) constructs a promise that's waiting on the three sub-promises, and it's that main promise that's yielded out for the runGenerator(..) utility to listen to for generator resumption. The sub-promises can receive a response that looks like another URL to redirect to, and chain off another sub-request promise to the new location. To learn more about promise chaining, read this article section.
+```
 
-Any kind of capability/complexity that promises can handle with asynchronicity, you can gain the sync-looking code benefits by using generators that yield out promises (of promises of promises of ...). It's the best of both worlds.
+Promise.all([ .. ]) 里面放了3个子promise，主promise完成后就会在runGenerator中恢复generator。子promise拿到的是一天重定向的url，我们会把它丢给下一个request请求，然后获取到最终数据。
 
-runGenerator(..): Library Utility
-We had to define our own runGenerator(..) utility above to enable and smooth out this generator+promise awesomeness. We even omitted (for brevity sake) the full implementation of such a utility, as there's more nuance details related to error-handling to deal with.
 
-But, you don't want to write your own runGenerator(..) do you?
+任何复杂的异步功能都可以被promise搞定，而且你还可以用generator把这些流程写的像同步代码一样。只要你让yield返回一个promise。
 
-I didn't think so.
+## ES7 async
 
-A variety of promise/async libs provide just such a utility. I won't cover them here, but you can take a look at Q.spawn(..), the co(..) lib, etc.
+现在可以稍微提下ES7了，它更像把`runGenerator(..)`这个异步执行逻辑做了一层封装。
 
-I will however briefly cover my own library's utility: asynquence's runner(..) plugin, as I think it offers some unique capabilities over the others out there. I wrote an in-depth 2-part blog post series on asynquence if you're interested in learning more than the brief exploration here.
-
-First off, asynquence provides utilities for automatically handling the "error-first style" callbacks from the above snippets:
-
-function request(url) {
-    return ASQ( function(done){
-        // pass an error-first style callback
-        makeAjaxCall( url, done.errfcb );
-    } );
-}
-That's much nicer, isn't it!?
-
-Next, asynquence's runner(..) plugin consumes a generator right in the middle of an asynquence sequence (asynchronous series of steps), so you can pass message(s) in from the preceding step, and your generator can pass message(s) out, onto the next step, and all errors automatically propagate as you'd expect:
-
-// first call `getSomeValues()` which produces a sequence/promise,
-// then chain off that sequence for more async steps
-getSomeValues()
-
-// now use a generator to process the retrieved values
-.runner( function*(token){
-    // token.messages will be prefilled with any messages
-    // from the previous step
-    var value1 = token.messages[0];
-    var value2 = token.messages[1];
-    var value3 = token.messages[2];
-
-    // make all 3 Ajax requests in parallel, wait for
-    // all of them to finish (in whatever order)
-    // Note: `ASQ().all(..)` is like `Promise.all(..)`
-    var msgs = yield ASQ().all(
-        request( "http://some.url.1?v=" + value1 ),
-        request( "http://some.url.2?v=" + value2 ),
-        request( "http://some.url.3?v=" + value3 )
-    );
-
-    // send this message onto the next step
-    yield (msgs[0] + msgs[1] + msgs[2]);
-} )
-
-// now, send the final result of previous generator
-// off to another request
-.seq( function(msg){
-    return request( "http://some.url.4?msg=" + msg );
-} )
-
-// now we're finally all done!
-.val( function(result){
-    console.log( result ); // success, all done!
-} )
-
-// or, we had some error!
-.or( function(err) {
-    console.log( "Error: " + err );
-} );
-The asynquence runner(..) utility receives (optional) messages to start the generator, which come from the previous step of the sequence, and are accessible in the generator in the token.messages array.
-
-Then, similar to what we demonstrated above with the runGenerator(..) utility, runner(..) listens for either a yielded promise or yielded asynquence sequence (in this case, an ASQ().all(..) sequence of "parallel" steps), and waits for it to complete before resuming the generator.
-
-When the generator finishes, the final value it yields out passes along to the next step in the sequence.
-
-Moreover, if any error happens anywhere in this sequence, even inside the generator, it will bubble out to the single or(..) error handler registered.
-
-asynquence tries to make mixing and matching promises and generators as dead-simple as it could possibly be. You have the freedom to wire up any generator flows alongside promise-based sequence step flows, as you see fit.
-
-ES7 async
-There is a proposal for the ES7 timeline, which looks fairly likely to be accepted, to create still yet another kind of function: an async function, which is like a generator that's automatically wrapped in a utility like runGenerator(..) (or asynquence's' runner(..)). That way, you can send out promises and the async function automatically wires them up to resume itself on completion (no need even for messing around with iterators!).
-
-It will probably look something like this:
-
-async function main() {
-    var result1 = await request( "http://some.url.1" );
-    var data = JSON.parse( result1 );
-
-    var result2 = await request( "http://some.url.2?id=" + data.id );
-    var resp = JSON.parse( result2 );
-    console.log( "The value you asked for: " + resp.value );
+```javascript
+async funtion main() {
+	var result1 = await request('http://some.url.1');
+	var data = JSON.parse(result1);
+	
+	var result2 = await request('http://some.url.2?id='+data.id);
+	var resp = JSON.parse(result2);
+	console.log( "The value you asked for: " + resp.value );
 }
 
 main();
-As you can see, an async function can be called directly (like main()), with no need for a wrapper utility like runGenerator(..) or ASQ().runner(..) to wrap it. Inside, instead of using yield, you'll use await (another new keyword) that tells the async function to wait for the promise to complete before proceeding.
+```
 
-Basically, we'll have most of the capability of library-wrapped generators, but directly supported by native syntax.
+我们直接调用`main()`就可以执行完所有的流程，不需要调用`next`,也不需要去实现`runGenerator(..)`之类的来管理promise逻辑。只需要把yield关键词换成await就可以告诉异步方法，我们在这里需要等到一个promise后才会接着执行。
 
-Cool, huh!?
+有了这些原生的语法支持，是不是很酷。
 
-In the meantime, libraries like asynquence give us these runner utilities to make it pretty darn easy to get the most out of our asynchronous generators!
 
-Summary
-Put simply: a generator + yielded promise(s) combines the best of both worlds to get really powerful and elegant sync(-looking) async flow control expression capabilities. With simple wrapper utilities (which many libraries are already providing), we can automatically run our generators to completion, including sane and sync(-looking) error handling!
 
-And in ES7+ land, we'll probably see async functions that let us do that stuff even without a library utility (at least for the base cases)!
+## 小结
 
-The future of async in JavaScript is bright, and only getting brighter! I gotta wear shades.
+`generator + yielded promise(s)`的组合目前是最强大，也是最优雅的异步流程管理编程方式。通过封装一层流执行逻辑，我们可以自动的让我们的generator执行结束，并且还可以像处理同步逻辑一样管理error事件。
 
-But it doesn't end here. There's one last horizon we want to explore:
+在ES7中，我们甚至连这一层封装都不需要写了，变得更方便
 
-What if you could tie 2 or more generators together, let them run independently but "in parallel", and let them send messages back and forth as they proceed? That would be some super powerful capability, right!?! This pattern is called "CSP" (communicating sequential processes). We'll explore and unlock the power of CSP in the next article. Keep an eye out!
+
 
 ## 参考
 -	[Asynchronous calls with ES6 generators](http://blog.mgechev.com/2014/12/21/handling-asynchronous-calls-with-es6-javascript-generators/)
