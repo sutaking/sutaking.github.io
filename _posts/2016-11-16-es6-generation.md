@@ -8,10 +8,9 @@ date: 2016-11-16 16:00:24.000000000 +08:00
 
 对ES6的generators的介绍分为3个部分
 
--	第一部分base介绍及使用
-- 第二部分基于generators来实现es7的async函数
-- 第三部分基于async的Observable数据流开发
-
+- 第一部分base介绍及使用
+- 第二部分基于generators和Promise实现最强大的异步处理逻辑
+ 
 ## 概述
 
 Generator函数是协程在ES6的实现，用来做异步流程的封装，最大特点就是可以交出函数的执行权（即暂停执行）。十分的奇葩，光看语法，简直认不出这也是JavaScript了。由于可以使用yield语句来暂停异步操作，这让generators异步编程的代码，很像同步数据流方法一样。因为从语法角度来看，generators函数是一个状态机，封装了多个内部状态，通过iterator来分步调用。
@@ -311,7 +310,81 @@ gen.next().value.then(function(r1){
 });
 ```
 
+### runGenerator的实现
 
+每次都要手动去调用next方法，还是会让代码变得冗长，我们可以设计一个专门用来运行generators的方法，并可以抽象出来，以后就可以做一个统一的error管理，或者获取本地数据逻辑的变化。
+
+#### Thunk函数方法
+
+编译器的‘传名调用’实现，将所有的参数放到一个临时函数中，再将这个临时函数作为参数传入到函数体中。该临时函数就叫做Thunk函数。
+
+任何函数，只要参数有回调函数，就能写成Thunk函数的方法。下面就是简单的Thunk函数转换器。
+
+```javascript
+//es5
+var Thunk = function(fn) {
+	return function() {
+		var args = Array.pototype.silce.call(argumnets);
+		return function (callback) {
+			args.push(callback);
+			return fn.apply(this. args);
+		}
+	}
+}
+
+//es6
+var Thunk = function(fn) {
+	return function(...args) {
+		return function(callback) {
+			return fn.call(this, ...args, callback);
+		}
+	}
+}
+```
+
+一个使用Thunk方法来实现readFile的例子
+
+```javascript
+//正常版本的readFile（多参数）
+fs.readFile(filename, callback);
+
+//Thunk版本的readFile（单参数）
+var readFileThunk = Thunk(filename);
+readFileThunk(callback);
+
+var Thunk = function(fileName) {
+	return function(callback) {
+		return fs.readFile(fileName, callback);
+	}
+}
+```
+
+可以看到，如果我们通过构建一个基于Thunk方法实现的runGenerators函数，可以很好的控制我们的generators运行流程。
+
+```javascript
+function *generator() {
+	var articles = yield getArticleList();
+	var article = yield getArticle(articles[0].id);
+	var author = yield getAuthor(article.authorId);
+	console.log(author.email);
+}
+
+function runGenerator() {
+	var gen = generator();
+	
+	function go(result) {
+		if(result.done) return;
+		
+		result.value.then(function(rsp) {
+			go(gen.next(rsp));
+		})
+	}
+	
+	go(gen.next());
+}
+
+runGenerator();
+```
 
 
 ## 参考
