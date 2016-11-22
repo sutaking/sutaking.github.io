@@ -81,7 +81,6 @@ it.next(); //启动所有请求
 
 上面的代码总是启动一个异步Ajax请求，但是如果没有做会发生什么？如果我们后来更改了我们程序中先前（预先请求）的Ajax返回的数据，该怎么办？或者我们的程序的URL路由系统通过其他一些复杂的逻辑，可以立即满足Ajax请求，这时就可以不需要fetch数据从服务器了。
 
-We could change the implementation of request(..) to something like this:
 这样，我们可以把`request(..)`代码稍微修改一下
 
 ```javascript
@@ -120,7 +119,7 @@ var data = JSON.parse(result1);
 
 这就是将异步编程抽象成更小细节的真正力量。
 
-更好的异步编程
+## 更好的异步编程
 
 上面的方法可以适用于那些比较简单的异步generator工作流程。但是它将很快收到限制，因此我们需要一些更强大的异步机制与我们的generator来合作，这样才可以发挥出更强大的功能。那是什么机制：Promise。
 
