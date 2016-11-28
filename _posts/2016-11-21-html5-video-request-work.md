@@ -21,5 +21,5 @@ Video标签里的视频的总时长是存储在`Movie Header atom(mvhd)`中。�
 
 ## keywords
 
--	ISC/IEC 14496-12
+- ISC/IEC 14496-12
 - QuickTime File Format documentation
