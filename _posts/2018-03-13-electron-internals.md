@@ -1,6 +1,6 @@
 ---
 layout: post
-title:【译+源码分析】Electron内部：整合Message Loop
+title:【译+源码分析】Electron内部:整合Message Loop
 date: 2018-03-13 18:11:24.000000000 +08:00
 ---
 
@@ -47,13 +47,13 @@ backend fd的概念被引入到libuv中，可以理解为libuv轮询其事件循
 
 ## 译者注
 
-Electron`./atom/common/node_bindings.cc`中的`CreateEnvironment()`是Node环境的导入入口函数，分别在3个地方`./atom/renderer/atom_renderer_client.cc`、`./atom/browser/atom_browser_main_parts.cc`、`./atom/renderer/web_worker_observer.cc`，除了主进程和渲染进程，还有webwork环境，这是由于worker也是独立的js环境，并且缺少web环境的一些api,需要用message或事件与主进程进行数据交互。
+Electron`./atom/common/node_bindings.cc`中的`CreateEnvironment()`是Node环境的导入入口函数，分别在3个地方`./atom/renderer/atom_renderer_client.cc`,`./atom/browser/atom_browser_main_parts.cc`,`./atom/renderer/web_worker_observer.cc`，除了主进程和渲染进程，还有webwork环境，这是由于worker也是独立的js环境，并且缺少web环境的一些api,需要用message或事件与主进程进行数据交互。
 
 画了一下node_bingding的流程图：
 
-![img](../assets/18/node_binding.png)
+![img](../assets/images/node_binding.png)
 
-PrepareMessageLoop()就是本篇文章提到的整合方法。
+`PrepareMessageLoop()`就是本篇文章提到的整合方法。
 ````C++
   // Add dummy handle for libuv, otherwise libuv would quit when there is
   // nothing to do.
